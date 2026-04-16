@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quiz App</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      background: green;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Quiz App</h2>
+
+  <!-- Q1 -->
+  <div class="question">
+    <p>1. What is the capital of India?</p>
+    <input type="radio" name="q1" value="A"> Mumbai<br>
+    <input type="radio" name="q1" value="B"> Delhi<br>
+    <input type="radio" name="q1" value="C"> Pune<br>
+    <input type="radio" name="q1" value="D"> Chennai<br>
+  </div>
+
+  <!-- Q2 -->
+  <div class="question">
+    <p>2. Which language is used for web development?</p>
+    <input type="radio" name="q2" value="A"> Python<br>
+    <input type="radio" name="q2" value="B"> JavaScript<br>
+    <input type="radio" name="q2" value="C"> C++<br>
+    <input type="radio" name="q2" value="D"> Java<br>
+  </div>
+
+  <!-- Q3 -->
+  <div class="question">
+    <p>3. What does CPU stand for?</p>
+    <input type="radio" name="q3" value="A"> Central Process Unit<br>
+    <input type="radio" name="q3" value="B"> Central Processing Unit<br>
+    <input type="radio" name="q3" value="C"> Computer Personal Unit<br>
+    <input type="radio" name="q3" value="D"> Control Processing Unit<br>
+  </div>
+
+  <!-- Q4 -->
+  <div class="question">
+    <p>4. Which is a database?</p>
+    <input type="radio" name="q4" value="A"> HTML<br>
+    <input type="radio" name="q4" value="B"> CSS<br>
+    <input type="radio" name="q4" value="C"> MySQL<br>
+    <input type="radio" name="q4" value="D"> Java<br>
+  </div>
+
+  <!-- Q5 -->
+  <div class="question">
+    <p>5. Which company created Java?</p>
+    <input type="radio" name="q5" value="A"> Microsoft<br>
+    <input type="radio" name="q5" value="B"> Apple<br>
+    <input type="radio" name="q5" value="C"> Sun Microsystems<br>
+    <input type="radio" name="q5" value="D"> Google<br>
+  </div>
+
+  <button onclick="submitQuiz()">Submit</button>
+
+  <h3 id="result"></h3>
+</div>
+
+<script>
+function submitQuiz() {
+  let answers = [];
+
+  for (let i = 1; i <= 5; i++) {
+    let val = document.querySelector(`input[name="q${i}"]:checked`)?.value;
+    if (!val) {
+      alert("Please answer all questions");
+      return;
+    }
+    answers.push(val);
+  }
+
+  fetch("http://localhost:3000/submit", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      responses: answers
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("result").innerText = "Your Score: " + data.score;
+  });
+}
+</script>
+
+</body>
+</html>
