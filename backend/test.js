@@ -4,7 +4,7 @@ const app = require("./server");
 test("Score test", async () => {
   const res = await request(app)
     .post("/submit")
-    .send({ responses: ["A", "B"] });
+    .send({ responses: ["B", "B", "B", "C", "C"] });
 
-  expect(res.body.score).toBe(2);
+  expect(res.body.score).toBe(5);
 });
