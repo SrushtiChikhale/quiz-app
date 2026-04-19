@@ -11,8 +11,11 @@ app.get("/", (req, res) => {
 });
 
 const questions = [
-  { id: 1, answer: "A" },
-  { id: 2, answer: "B" }
+  { id: 1, answer: "B" }, // Delhi
+  { id: 2, answer: "B" }, // JavaScript
+  { id: 3, answer: "B" }, // CPU
+  { id: 4, answer: "C" }, // MySQL
+  { id: 5, answer: "C" }  // Sun Microsystems
 ];
 
 app.post("/submit", (req, res) => {
