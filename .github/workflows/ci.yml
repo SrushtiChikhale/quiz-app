@@ -32,3 +32,8 @@ jobs:
         run: |
           cd backend
           npm test
+
+      - name: Build Docker Image
+        run: |
+          cd backend
+          docker build -t quiz-backend .     

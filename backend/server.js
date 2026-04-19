@@ -6,6 +6,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.send("Quiz API is running ");
+});
+
 const questions = [
   { id: 1, answer: "A" },
   { id: 2, answer: "B" }
@@ -23,7 +27,9 @@ app.post("/submit", (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(3000, () => console.log("Server running"));
+  app.listen(5000, "0.0.0.0", () => {
+    console.log("Server running on port 5000");
+  });
 }
 
 module.exports = app;
