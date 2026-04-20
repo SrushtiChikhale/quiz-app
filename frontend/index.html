@@ -3,120 +3,180 @@
 <head>
   <title>Quiz App</title>
   <style>
-    body {
-      font-family: Arial;
-      background: #f4f4f4;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    }
-    h2 {
-      text-align: center;
-    }
-    .question {
-      margin-bottom: 20px;
-    }
-    button {
-      padding: 10px;
-      width: 100%;
-      background: green;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+    body { font-family: Arial; background:#f4f4f4; padding:20px; }
+    .container { background:#fff; padding:20px; border-radius:10px; max-width:800px; margin:auto; }
+    .tabs button { margin:5px; padding:10px; background:#007bff; color:#fff; border:none; border-radius:5px; }
+    .question { margin-bottom:12px; }
+    .submit-btn { background:green; width:100%; padding:10px; color:#fff; border:none; border-radius:5px; }
+    #timer { text-align:right; font-weight:bold; }
   </style>
 </head>
-
 <body>
 
 <div class="container">
   <h2>Quiz App</h2>
 
-  <!-- Q1 -->
-  <div class="question">
-    <p>1. What is the capital of India?</p>
-    <input type="radio" name="q1" value="A"> Mumbai<br>
-    <input type="radio" name="q1" value="B"> Delhi<br>
-    <input type="radio" name="q1" value="C"> Pune<br>
-    <input type="radio" name="q1" value="D"> Chennai<br>
+  <!-- Login -->
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
+
+  <div id="timer"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button onclick="loadQuiz('gk')">GK</button>
+    <button onclick="loadQuiz('tech')">Tech</button>
+    <button onclick="loadQuiz('science')">Science</button>
+    <button onclick="loadQuiz('math')">Math</button>
   </div>
 
-  <!-- Q2 -->
-  <div class="question">
-    <p>2. Which language is used for web development?</p>
-    <input type="radio" name="q2" value="A"> Python<br>
-    <input type="radio" name="q2" value="B"> JavaScript<br>
-    <input type="radio" name="q2" value="C"> C++<br>
-    <input type="radio" name="q2" value="D"> Java<br>
-  </div>
-
-  <!-- Q3 -->
-  <div class="question">
-    <p>3. What does CPU stand for?</p>
-    <input type="radio" name="q3" value="A"> Central Process Unit<br>
-    <input type="radio" name="q3" value="B"> Central Processing Unit<br>
-    <input type="radio" name="q3" value="C"> Computer Personal Unit<br>
-    <input type="radio" name="q3" value="D"> Control Processing Unit<br>
-  </div>
-
-  <!-- Q4 -->
-  <div class="question">
-    <p>4. Which is a database?</p>
-    <input type="radio" name="q4" value="A"> HTML<br>
-    <input type="radio" name="q4" value="B"> CSS<br>
-    <input type="radio" name="q4" value="C"> MySQL<br>
-    <input type="radio" name="q4" value="D"> Java<br>
-  </div>
-
-  <!-- Q5 -->
-  <div class="question">
-    <p>5. Which company created Java?</p>
-    <input type="radio" name="q5" value="A"> Microsoft<br>
-    <input type="radio" name="q5" value="B"> Apple<br>
-    <input type="radio" name="q5" value="C"> Sun Microsystems<br>
-    <input type="radio" name="q5" value="D"> Google<br>
-  </div>
-
-  <button onclick="submitQuiz()">Submit</button>
+  <div id="quiz"></div>
+  <button class="submit-btn" onclick="submitQuiz()">Submit</button>
 
   <h3 id="result"></h3>
+  <canvas id="chart"></canvas>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-function submitQuiz() {
-  let answers = [];
 
-  for (let i = 1; i <= 5; i++) {
-    let val = document.querySelector(`input[name="q${i}"]:checked`)?.value;
-    if (!val) {
-      alert("Please answer all questions");
-      return;
-    }
-    answers.push(val);
-  }
+const API = "http://localhost:5000";
 
-  fetch("https://quiz-app-7x1b.onrender.com/submit", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      responses: answers
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("result").innerText = "Your Score: " + data.score;
+let currentSubject = "gk";
+let currentUser = "";
+let timer = 60, interval;
+
+// QUESTIONS (MATCH BACKEND EXACTLY)
+const quizzes = {
+  gk: [
+    {q:"Capital of India?",o:["Mumbai","Delhi","Pune","Chennai"],a:"Delhi"},
+    {q:"Largest ocean?",o:["Atlantic","Indian","Pacific","Arctic"],a:"Pacific"},
+    {q:"Highest mountain?",o:["K2","Everest","Kilimanjaro","Denali"],a:"Everest"},
+    {q:"Longest river?",o:["Nile","Amazon","Yangtze","Ganga"],a:"Nile"},
+    {q:"Largest continent?",o:["Africa","Asia","Europe","Australia"],a:"Asia"},
+    {q:"Most populous country?",o:["India","China","USA","Brazil"],a:"India"},
+    {q:"Independence year?",o:["1945","1947","1950","1930"],a:"1947"},
+    {q:"Planet we live on?",o:["Mars","Venus","Earth","Jupiter"],a:"Earth"},
+    {q:"Land of rising sun?",o:["China","Japan","Korea","Thailand"],a:"Japan"},
+    {q:"Gas we breathe?",o:["O2","CO2","N2","H2"],a:"O2"}
+  ],
+
+  tech: [
+    {q:"JS is?",o:["Language","OS","DB","Hardware"],a:"Language"},
+    {q:"HTML full form?",o:["Hyper Text Markup Language","High Text Machine Language","Hyperlink Text","None"],a:"Hyper Text Markup Language"},
+    {q:"Styling?",o:["JS","HTML","CSS","SQL"],a:"CSS"},
+    {q:"Runtime?",o:["Node.js","Chrome","Linux","Windows"],a:"Node.js"},
+    {q:"Storage?",o:["RAM","CPU","Database","Cache"],a:"Database"},
+    {q:"Communication?",o:["API","UI","UX","CLI"],a:"API"},
+    {q:"Container?",o:["VM","Docker","Git","NPM"],a:"Docker"},
+    {q:"Version control?",o:["Git","SVN","CVS","Mercurial"],a:"Git"},
+    {q:"Hosting?",o:["Cloud","Edge","Local","All"],a:"Cloud"},
+    {q:"Automation?",o:["CI/CD","AI","ML","DL"],a:"CI/CD"}
+  ],
+
+  science: [
+    {q:"H2O?",o:["Water","Oxygen","Hydrogen","Salt"],a:"Water"},
+    {q:"Sun is?",o:["Planet","Star","Moon","Asteroid"],a:"Star"},
+    {q:"Force?",o:["Friction","Gravity","Magnetism","Inertia"],a:"Gravity"},
+    {q:"Breathing gas?",o:["O2","CO2","N2","H2"],a:"O2"},
+    {q:"Plants process?",o:["Respiration","Photosynthesis","Digestion","Absorption"],a:"Photosynthesis"},
+    {q:"Smallest unit?",o:["Cell","Atom","Molecule","Ion"],a:"Atom"},
+    {q:"Negative particle?",o:["Proton","Neutron","Electron","Positron"],a:"Electron"},
+    {q:"Motion laws?",o:["Einstein","Newton","Bohr","Curie"],a:"Newton"},
+    {q:"Energy unit?",o:["Watt","Volt","Joule","Amp"],a:"Joule"},
+    {q:"Magnet unit?",o:["Tesla","Newton","Ohm","Pascal"],a:"Tesla"}
+  ],
+
+  math: [
+    {q:"2+2?",o:["3","4","5","6"],a:"4"},
+    {q:"3^2?",o:["6","9","12","3"],a:"9"},
+    {q:"4^2?",o:["8","12","16","20"],a:"16"},
+    {q:"5^2?",o:["10","15","20","25"],a:"25"},
+    {q:"6^2?",o:["30","36","42","48"],a:"36"},
+    {q:"7^2?",o:["49","56","63","70"],a:"49"},
+    {q:"8^2?",o:["56","64","72","80"],a:"64"},
+    {q:"9^2?",o:["72","81","90","99"],a:"81"},
+    {q:"10^2?",o:["90","100","110","120"],a:"100"},
+    {q:"11^2?",o:["110","121","132","143"],a:"121"}
+  ]
+};
+
+// AUTH
+function signup(){
+  fetch(API+"/signup",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({username:username.value,password:password.value})})
+  .then(r=>r.json()).then(d=>alert(d.msg));
+}
+
+function login(){
+  fetch(API+"/login",{method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({username:username.value,password:password.value})})
+  .then(r=>r.json()).then(d=>{
+    if(d.msg==="Login success"){ currentUser=username.value; alert("Logged in"); }
+    else alert("Invalid");
   });
 }
-</script>
 
+// LOAD QUIZ
+function loadQuiz(s){
+  currentSubject=s;
+  const c=document.getElementById("quiz");
+  c.innerHTML="";
+  quizzes[s].forEach((q,i)=>{
+    c.innerHTML+=`<div class="question">
+      <p>${i+1}. ${q.q}</p>
+      ${q.o.map(o=>`<input type="radio" name="q${i}" value="${o}"> ${o}<br>`).join("")}
+    </div>`;
+  });
+  startTimer();
+}
+loadQuiz("gk");
+
+// TIMER
+function startTimer(){
+  clearInterval(interval);
+  timer=60;
+  interval=setInterval(()=>{
+    timer--;
+    document.getElementById("timer").innerText="Time: "+timer;
+    if(timer===0){ clearInterval(interval); submitQuiz(); }
+  },1000);
+}
+
+// SUBMIT
+function submitQuiz(){
+  clearInterval(interval);
+  let responses=[];
+
+  for(let i=0;i<10;i++){
+    let val=document.querySelector(`input[name="q${i}"]:checked`);
+    if(!val){ alert("Answer all questions"); return; }
+    responses.push(val.value);
+  }
+
+  fetch(API+"/submit",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({responses,subject:currentSubject,username:currentUser})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    document.getElementById("result").innerHTML =
+      `Score: ${d.score} | Correct: ${d.correct} | Wrong: ${d.wrong}`;
+
+    new Chart(document.getElementById("chart"),{
+      type:"pie",
+      data:{
+        labels:["Correct","Wrong"],
+        datasets:[{data:[d.correct,d.wrong],backgroundColor:["green","red"]}]
+      }
+    });
+  });
+}
+
+</script>
 </body>
 </html>
