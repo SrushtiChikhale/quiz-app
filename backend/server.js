@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB
-mongoose.connect("mongodb+srv://quizuser:Srushti@123@cluster0.mongodb.net/quizdb");
+mongoose.connect("mongodb+srv://quizuser:Srushti%40123@cluster0.wnrxnxq.mongodb.net/quizdb?retryWrites=true&w=majority");
 const User = mongoose.model("User", { username: String, password: String });
 const Result = mongoose.model("Result", {
   username: String,
