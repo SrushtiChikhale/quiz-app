@@ -6,9 +6,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB
-mongoose.connect("mongodb+srv://quizuser:Srushti%40123@cluster0.wnrxnxq.mongodb.net/quizdb?retryWrites=true&w=majority");
-const User = mongoose.model("User", { username: String, password: String });
+// ================= MONGODB =================
+// Only connect DB if not testing
+
+if (process.env.NODE_ENV !== "test") {
+  mongoose.connect(
+    "mongodb+srv://quizuser:Srushti%40123@cluster0.wnrxnxq.mongodb.net/quizdb?retryWrites=true&w=majority"
+  )
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.log("Mongo Error:", err));
+}
+
+// ================= MODELS =================
+const User = mongoose.model("User", {
+  username: String,
+  password: String,
+});
+
 const Result = mongoose.model("Result", {
   username: String,
   subject: String,
@@ -21,22 +35,26 @@ const Result = mongoose.model("Result", {
 // ================= AUTH =================
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
+
   const exists = await User.findOne({ username });
   if (exists) return res.json({ msg: "User exists" });
+
   await User.create({ username, password });
+
   res.json({ msg: "Signup success" });
 });
 
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
+
   const user = await User.findOne({ username, password });
   if (!user) return res.json({ msg: "Invalid" });
+
   res.json({ msg: "Login success" });
 });
 
 // ================= QUESTIONS =================
 const quizzes = {
-
   gk: [
     { a: "Delhi", d: "easy" },
     { a: "Pacific", d: "easy" },
@@ -88,7 +106,6 @@ const quizzes = {
     { a: "100", d: "hard" },
     { a: "121", d: "hard" }
   ]
-
 };
 
 // ================= SUBMIT =================
@@ -97,8 +114,8 @@ app.post("/submit", async (req, res) => {
 
   const qs = quizzes[subject];
 
-  if (!qs) {
-    return res.json({ msg: "Invalid subject" });
+  if (!qs || !responses || responses.length !== qs.length) {
+    return res.json({ msg: "Invalid data" });
   }
 
   let correct = 0, wrong = 0, score = 0;
@@ -106,9 +123,11 @@ app.post("/submit", async (req, res) => {
   qs.forEach((q, i) => {
     if (responses[i] === q.a) {
       correct++;
+
       if (q.d === "easy") score += 1;
-      if (q.d === "medium") score += 2;
-      if (q.d === "hard") score += 3;
+      else if (q.d === "medium") score += 2;
+      else if (q.d === "hard") score += 3;
+
     } else {
       wrong++;
     }
@@ -121,9 +140,25 @@ app.post("/submit", async (req, res) => {
   res.json({ correct, wrong, score });
 });
 
+// ================= HISTORY (NEW FEATURE) =================
+app.get("/results/:username", async (req, res) => {
+  try {
+    const data = await Result.find({ username: req.params.username });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ msg: "Error fetching results" });
+  }
+});
+
 // ================= SERVER =================
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on ${PORT}`);
-});
+// Only start server if NOT testing
+if (require.main === module) {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on ${PORT}`);
+  });
+}
+
+// Export app for testing
+module.exports = app;
